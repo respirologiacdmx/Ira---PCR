@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IRA-PCR · Hospital Satélite</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; background: #f0f4f8; color: #222; font-size: 15px; }
+
+  header {
+    background: #1a3a5c; color: #fff;
+    padding: 14px 24px; position: sticky; top: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  header .title { font-size: 16px; font-weight: 700; }
+  header .sub { font-size: 12px; opacity: .7; margin-top: 2px; }
+  header .folio-badge { background: #2e7ab6; border-radius: 8px; padding: 6px 14px; font-size: 14px; font-weight: 700; }
+
+  .container { max-width: 820px; margin: 0 auto; padding: 16px 16px 60px; }
+
+  .aviso {
+    background: #fff8e6; border: 1.5px solid #e6a800; border-radius: 8px;
+    padding: 10px 16px; margin-bottom: 14px; font-size: 13px; color: #7a5000;
+  }
+
+  .section { background: #fff; border-radius: 10px; border: 1px solid #b0cce4; margin-bottom: 16px; overflow: hidden; }
+  .section-title { background: #1a3a5c; color: #fff; padding: 10px 18px; font-size: 14px; font-weight: 700; }
+  .section-body { padding: 16px 18px; }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+  label.field-label { display: block; font-size: 12px; font-weight: 700; color: #1a3a5c; margin-bottom: 4px; }
+  input[type=text], input[type=number], input[type=date], select {
+    width: 100%; border: 1.5px solid #b0cce4; border-radius: 6px;
+    padding: 7px 10px; font-size: 14px; font-family: Arial, sans-serif;
+    background: #f7fafd; color: #222; transition: border-color .15s;
+  }
+  input:focus, select:focus { outline: none; border-color: #2e7ab6; background: #fff; }
+  input.error, select.error { border-color: #c00 !important; background: #fff5f5; }
+
+  .intensity { display: flex; gap: 4px; }
+  .intensity button {
+    flex: 1; padding: 6px 2px; font-size: 12px; border-radius: 5px;
+    border: 1.5px solid #b0cce4; background: #f7fafd; color: #555;
+    cursor: pointer; transition: all .12s; font-family: Arial, sans-serif;
+  }
+  .intensity button.active { background: #2e7ab6; border-color: #2e7ab6; color: #fff; font-weight: 700; }
+  .intensity button:hover:not(.active) { border-color: #2e7ab6; color: #2e7ab6; }
+  .symptom-row { margin-bottom: 10px; }
+
+  .subhead {
+    font-size: 11px; font-weight: 700; color: #2e7ab6; margin: 14px 0 4px;
+    text-transform: uppercase; letter-spacing: .5px;
+    border-bottom: 1px solid #e0eaf5; padding-bottom: 4px;
+  }
+  .nota-escala { font-size: 11px; color: #999; margin-bottom: 8px; font-style: italic; }
+
+  .pcr-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 4px; }
+  .pcr-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 5px 8px; border-radius: 6px; cursor: pointer;
+    border: 1.5px solid #b0cce4; background: #f7fafd;
+    transition: all .12s; font-size: 13px;
+  }
+  .pcr-item.checked { background: #e8f2fb; border-color: #2e7ab6; font-weight: 600; }
+  .pcr-item input[type=checkbox] { accent-color: #2e7ab6; width: 15px; height: 15px; flex-shrink: 0; }
+  .pcr-obligatorio { font-size: 12px; color: #c00; margin-top: 4px; display: none; }
+  .pcr-obligatorio.show { display: block; }
+
+  .panel-btns { display: flex; gap: 8px; margin-bottom: 12px; }
+  .panel-btn {
+    padding: 7px 18px; border-radius: 7px; border: 1.5px solid #b0cce4;
+    background: #f7fafd; color: #1a3a5c; font-weight: 700; font-size: 13px;
+    cursor: pointer; transition: all .12s; font-family: Arial, sans-serif;
+  }
+  .panel-btn.active { background: #2e7ab6; border-color: #2e7ab6; color: #fff; }
+
+  .vitals-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+
+  .btn-save {
+    width: 100%; padding: 15px; border-radius: 10px; border: none;
+    background: #1a3a5c; color: #fff; font-size: 16px; font-weight: 700;
+    cursor: pointer; font-family: Arial, sans-serif; transition: background .15s;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+  }
+  .btn-save:hover:not(:disabled) { background: #2e7ab6; }
+  .btn-save:disabled { background: #7a9ab8; cursor: not-allowed; }
+
+  .spinner { width: 20px; height: 20px; border: 3px solid rgba(255,255,255,.3); border-top-color: #fff; border-radius: 50%; animation: spin .8s linear infinite; display: none; }
+  .spinner.show { display: block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .toast { display: none; border-radius: 8px; padding: 14px 18px; margin-bottom: 14px; font-weight: 700; font-size: 15px; }
+  .toast.ok { display: block; background: #1a6b3c; color: #fff; }
+  .toast.err { display: block; background: #c0392b; color: #fff; }
+
+  .required { color: #c00; }
+  .divider { border: none; border-top: 1.5px solid #e0eaf5; margin: 14px 0; }
+
+  @media (max-width: 540px) {
+    .grid2, .grid3, .vitals-grid { grid-template-columns: 1fr; }
+    .pcr-grid { grid-template-columns: 1fr; }
+    .intensity button { font-size: 11px; padding: 5px 1px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="title">Estudio IRA-PCR · Hospital Satélite</div>
+    <div class="sub">Captura de caso · 2026</div>
+  </div>
+  <div class="folio-badge" id="folio-badge">IRA-001</div>
+</header>
+
+<div class="container">
+
+  <div class="aviso">
+    ⚠ <strong>Complete todos los campos marcados con <span style="color:#c00">*</span></strong> y presione <strong>"Enviar caso"</strong>. Los datos se guardan automáticamente en la base de datos del estudio.
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <!-- IDENTIFICACIÓN -->
+  <div class="section">
+    <div class="section-title">1 · Identificación</div>
+    <div class="section-body">
+      <div class="grid3">
+        <div>
+          <label class="field-label">Folio (automático)</label>
+          <input type="text" id="folio" readonly style="background:#e8f2fb;font-weight:700;color:#1a3a5c;">
+        </div>
+        <div>
+          <label class="field-label">Fecha de consulta <span class="required">*</span></label>
+          <input type="date" id="fecha" oninput="autosave()">
+        </div>
+        <div>
+          <label class="field-label">Iniciales del paciente <span class="required">*</span></label>
+          <input type="text" id="iniciales" maxlength="5" placeholder="ej. JGR" oninput="autosave()" style="text-transform:uppercase">
+        </div>
+        <div>
+          <label class="field-label">Médico que reporta <span class="required">*</span></label>
+          <input type="text" id="medico" placeholder="Nombre completo" oninput="autosave()">
+        </div>
+        <div>
+          <label class="field-label">Edad (años) <span class="required">*</span></label>
+          <input type="number" id="edad" min="18" max="110" placeholder="ej. 45" oninput="autosave()">
+        </div>
+        <div>
+          <label class="field-label">Sexo <span class="required">*</span></label>
+          <select id="sexo" onchange="autosave()">
+            <option value="">— Seleccionar —</option>
+            <option>Masculino</option>
+            <option>Femenino</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">Días de evolución <span class="required">*</span></label>
+          <input type="number" id="dias" min="1" max="30" placeholder="ej. 3" oninput="autosave()">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SÍNTOMAS -->
+  <div class="section">
+    <div class="section-title">2 · Síntomas (referidos por el paciente)</div>
+    <div class="section-body">
+      <div class="subhead">Sistémicos</div>
+      <p class="nota-escala">Ausente · Leve · Moderado · Intenso</p>
+      <div class="grid2" id="sint-sistemicos"></div>
+
+      <div class="subhead">Vía aérea alta</div>
+      <div class="grid2" id="sint-alta"></div>
+
+      <div class="subhead">Vía aérea baja</div>
+      <div class="grid2" id="sint-baja"></div>
+
+      <div class="subhead">Gastrointestinales</div>
+      <div class="grid2" id="sint-gi"></div>
+
+      <hr class="divider">
+      <div>
+        <label class="field-label">Color de expectoración</label>
+        <select id="expectoracion_color" onchange="autosave()">
+          <option>N/A</option>
+          <option>Transparente</option>
+          <option>Blanca</option>
+          <option>Amarilla</option>
+          <option>Verde</option>
+          <option>Herrumbrosa</option>
+          <option>Hemoptoica</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- SIGNOS -->
+  <div class="section">
+    <div class="section-title">3 · Signos (exploración física)</div>
+    <div class="section-body">
+      <div class="vitals-grid">
+        <div>
+          <label class="field-label">Temperatura (°C) <span class="required">*</span></label>
+          <input type="number" id="temperatura" step="0.1" min="35" max="42" placeholder="37.0" oninput="autosave()">
+        </div>
+        <div>
+          <label class="field-label">FC (lpm) <span class="required">*</span></label>
+          <input type="number" id="fc" min="40" max="200" placeholder="80" oninput="autosave()">
+        </div>
+        <div>
+          <label class="field-label">FR (rpm) <span class="required">*</span></label>
+          <input type="number" id="fr" min="8" max="60" placeholder="16" oninput="autosave()">
+        </div>
+        <div>
+          <label class="field-label">SatO₂ (%) <span class="required">*</span></label>
+          <input type="number" id="sato2" min="70" max="100" placeholder="97" oninput="autosave()">
+        </div>
+      </div>
+
+      <div class="subhead">Faringe y cuello</div>
+      <p class="nota-escala">Eritema y adenopatías: Ausente · Presente · Intenso &nbsp;|&nbsp; Exudado: Ausente · Presente</p>
+      <div class="grid2" id="signos-faringe"></div>
+
+      <div class="subhead">Auscultación pulmonar</div>
+      <p class="nota-escala">Ausente · Presente · Intenso</p>
+      <div class="grid2" id="signos-auscultacion"></div>
+
+      <div class="subhead">Percusión</div>
+      <p class="nota-escala">Ausente · Presente</p>
+      <div class="grid2" id="signos-percusion"></div>
+    </div>
+  </div>
+
+  <!-- PCR -->
+  <div class="section">
+    <div class="section-title">4 · Resultado PCR Multiplex <span class="required">*</span></div>
+    <div class="section-body">
+      <label class="field-label">Panel utilizado <span class="required">*</span></label>
+      <div class="panel-btns">
+        <button class="panel-btn active" id="panel-22" onclick="setPanel('22',this)">BioFire RP2.1 (22 patógenos)</button>
+        <button class="panel-btn" id="panel-15" onclick="setPanel('15',this)">Panel 15 patógenos</button>
+      </div>
+
+      <label class="field-label">Patógenos detectados — marque todos los <u>positivos</u> <span class="required">*</span></label>
+      <div class="pcr-obligatorio" id="pcr-error">⚠ Seleccione al menos un patógeno detectado</div>
+
+      <div class="subhead">Virus</div>
+      <div class="pcr-grid" id="pcr-virus"></div>
+
+      <div id="pcr-bacterias-section">
+        <div class="subhead">Bacterias (panel 22 patógenos)</div>
+        <div class="pcr-grid" id="pcr-bacterias"></div>
+      </div>
+
+      <hr class="divider">
+      <div class="grid2">
+        <div>
+          <label class="field-label">Valores Ct (opcional)</label>
+          <input type="text" id="ct_values" placeholder='ej. InfA: 22, RSV: 28' oninput="autosave()">
+        </div>
+        <div>
+          <label class="field-label">Notas adicionales</label>
+          <input type="text" id="notas" placeholder="Observaciones relevantes" oninput="autosave()">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <button class="btn-save" id="btn-enviar" onclick="enviar()">
+    <div class="spinner" id="spinner"></div>
+    <span id="btn-label">✓ Enviar caso</span>
+  </button>
+
+</div>
+
+<script>
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxgztHVOeWAlqIeX-2KvU_iaJMUj54ntye4b0r6btqLHsakQfpwQJtUrwDtpoHu71Kg2Q/exec";
+const DRAFT_KEY  = "ira_pcr_draft";
+
+const SINT_SISTEMICOS = [
+  { key:"fiebre_subjetiva",    label:"Fiebre subjetiva" },
+  { key:"escalosfrio_rigors",  label:"Escalofrío / Rigors" },
+  { key:"mialgia",             label:"Mialgias" },
+  { key:"fatiga",              label:"Fatiga / Astenia" },
+  { key:"cefalea",             label:"Cefalea" },
+];
+const SINT_ALTA = [
+  { key:"rinorrea",            label:"Rinorrea / Congestión nasal" },
+  { key:"odinofagia",          label:"Odinofagia" },
+  { key:"disfonia",            label:"Disfonía" },
+  { key:"anosmia_ageusia",     label:"Anosmia / Ageusia" },
+];
+const SINT_BAJA = [
+  { key:"tos_seca",            label:"Tos seca" },
+  { key:"tos_productiva",      label:"Tos productiva" },
+  { key:"disnea",              label:"Disnea" },
+];
+const SINT_GI = [
+  { key:"diarrea",             label:"Diarrea" },
+  { key:"dolor_abdominal",     label:"Dolor abdominal" },
+];
+const SIGNOS_FARINGE = [
+  { key:"eritema_faringeo",    label:"Eritema faríngeo",             escala:"APi" },
+  { key:"exudado_faringeo",    label:"Exudado faríngeo",             escala:"AP"  },
+  { key:"adenopatias",         label:"Adenopatías cervicales",       escala:"APi" },
+];
+const SIGNOS_AUSCULTACION = [
+  { key:"sibilancias",         label:"Sibilancias",                  escala:"APi" },
+  { key:"estertores",          label:"Estertores / Crepitantes",     escala:"APi" },
+  { key:"murmullo_disminuido", label:"Murmullo vesicular disminuido",escala:"APi" },
+];
+const SIGNOS_PERCUSION = [
+  { key:"matidez",             label:"Matidez a la percusión",       escala:"AP"  },
+];
+
+const ESCALA_AMLI = ["Ausente","Leve","Moderado","Intenso"];
+const ESCALA_APi  = ["Ausente","Presente","Intenso"];
+const ESCALA_AP   = ["Ausente","Presente"];
+
+const VIRUS = [
+  "Influenza A","Influenza B","SARS-CoV-2","VSR A/B",
+  "Parainfluenza 1","Parainfluenza 2","Parainfluenza 3","Parainfluenza 4",
+  "Metapneumovirus A/B","Adenovirus","Rhinovirus/Enterovirus",
+  "Coronavirus 229E/NL63","Coronavirus OC43/HKU1",
+  "Bordetella pertussis","Mycoplasma pneumoniae"
+];
+const BACTERIAS = [
+  "Chlamydia pneumoniae","Legionella pneumophila","Moraxella catarrhalis",
+  "Haemophilus influenzae","Streptococcus pneumoniae","Staphylococcus aureus (MSSA/MRSA)"
+];
+
+const ALL_SINT   = [...SINT_SISTEMICOS,...SINT_ALTA,...SINT_BAJA,...SINT_GI];
+const ALL_SIGNOS = [...SIGNOS_FARINGE,...SIGNOS_AUSCULTACION,...SIGNOS_PERCUSION];
+
+const state = {};
+let panelActual = "22";
+let folioNum = 1;
+let autosaveTimer = null;
+
+// ─── FOLIO ────────────────────────────────────────────────────────────────
+function initFolio(n) {
+  folioNum = n || 1;
+  const f = `IRA-${String(folioNum).padStart(3,"0")}`;
+  document.getElementById("folio").value = f;
+  document.getElementById("folio-badge").textContent = f;
+}
+
+// ─── BUILD UI ─────────────────────────────────────────────────────────────
+function getEscala(s) {
+  return s.escala === "APi" ? ESCALA_APi : s.escala === "AP" ? ESCALA_AP : ESCALA_AMLI;
+}
+
+function buildGroup(containerId, items) {
+  const c = document.getElementById(containerId);
+  items.forEach(s => {
+    const escala = getEscala(s);
+    state[s.key] = escala[0];
+    const div = document.createElement("div");
+    div.className = "symptom-row";
+    div.innerHTML = `<label class="field-label">${s.label}</label>
+      <div class="intensity" id="int_${s.key}">
+        ${escala.map((v,i) =>
+          `<button onclick="setInt('${s.key}','${v}',this)"${i===0?" class='active'":""}>${v}</button>`
+        ).join("")}
+      </div>`;
+    c.appendChild(div);
+  });
+}
+
+function setInt(key, val, btn) {
+  state[key] = val;
+  document.querySelectorAll(`#int_${key} button`).forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  autosave();
+}
+
+function buildPCR(containerId, items) {
+  const c = document.getElementById(containerId);
+  c.innerHTML = "";
+  items.forEach(p => {
+    const label = document.createElement("label");
+    label.className = "pcr-item";
+    label.innerHTML = `<input type="checkbox" value="${p}"> ${p}`;
+    label.querySelector("input").addEventListener("change", function() {
+      label.classList.toggle("checked", this.checked);
+      document.getElementById("pcr-error").classList.remove("show");
+      autosave();
+    });
+    c.appendChild(label);
+  });
+}
+
+function setPanel(val, btn) {
+  panelActual = val;
+  document.querySelectorAll(".panel-btn").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  document.getElementById("pcr-bacterias-section").style.display = val==="22" ? "" : "none";
+  autosave();
+}
+
+function getPatogenos() {
+  return [...document.querySelectorAll(".pcr-item input:checked")].map(i => i.value);
+}
+
+// ─── AUTOSAVE ─────────────────────────────────────────────────────────────
+function autosave() {
+  clearTimeout(autosaveTimer);
+  autosaveTimer = setTimeout(() => {
+    const draft = {
+      folioNum, panel: panelActual, state: {...state},
+      patogenos: getPatogenos(),
+      fecha:      document.getElementById("fecha").value,
+      iniciales:  document.getElementById("iniciales").value,
+      medico:     document.getElementById("medico").value,
+      edad:       document.getElementById("edad").value,
+      sexo:       document.getElementById("sexo").value,
+      dias:       document.getElementById("dias").value,
+      temperatura:document.getElementById("temperatura").value,
+      fc:         document.getElementById("fc").value,
+      fr:         document.getElementById("fr").value,
+      sato2:      document.getElementById("sato2").value,
+      ct_values:  document.getElementById("ct_values").value,
+      notas:      document.getElementById("notas").value,
+      expectoracion_color: document.getElementById("expectoracion_color").value,
+    };
+    try { localStorage.setItem(DRAFT_KEY, JSON.stringify(draft)); } catch(e) {}
+  }, 400);
+}
+
+function restoreDraft() {
+  let d;
+  try { d = JSON.parse(localStorage.getItem(DRAFT_KEY)); } catch(e) {}
+  if (!d) return;
+  const hasContent = d.medico || d.iniciales || d.edad || (d.patogenos && d.patogenos.length);
+  if (!hasContent) return;
+
+  initFolio(d.folioNum);
+  ["fecha","iniciales","medico","edad","sexo","dias","temperatura","fc","fr","sato2","ct_values","notas"].forEach(id => {
+    if (d[id] !== undefined) document.getElementById(id).value = d[id];
+  });
+  if (d.expectoracion_color) document.getElementById("expectoracion_color").value = d.expectoracion_color;
+
+  if (d.panel && d.panel !== panelActual) {
+    const btn = document.getElementById(`panel-${d.panel}`);
+    if (btn) setPanel(d.panel, btn);
+  }
+  if (d.state) {
+    Object.entries(d.state).forEach(([key, val]) => {
+      state[key] = val;
+      const c = document.getElementById(`int_${key}`);
+      if (c) c.querySelectorAll("button").forEach(b => b.classList.toggle("active", b.textContent === val));
+    });
+  }
+  if (d.patogenos && d.patogenos.length) {
+    document.querySelectorAll(".pcr-item input").forEach(inp => {
+      const checked = d.patogenos.includes(inp.value);
+      inp.checked = checked;
+      inp.closest(".pcr-item").classList.toggle("checked", checked);
+    });
+  }
+}
+
+// ─── VALIDAR ──────────────────────────────────────────────────────────────
+function validar() {
+  let ok = true;
+  const obligatorios = ["fecha","iniciales","medico","edad","sexo","dias","temperatura","fc","fr","sato2"];
+  obligatorios.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el.value || el.value === "") {
+      el.classList.add("error");
+      ok = false;
+    } else {
+      el.classList.remove("error");
+    }
+  });
+  if (getPatogenos().length === 0) {
+    document.getElementById("pcr-error").classList.add("show");
+    ok = false;
+  }
+  return ok;
+}
+
+// ─── ENVIAR ───────────────────────────────────────────────────────────────
+function enviar() {
+  if (!validar()) {
+    window.scrollTo({top: 0, behavior: "smooth"});
+    showToast("⚠ Complete todos los campos obligatorios (marcados con *)", "err");
+    return;
+  }
+
+  const btn = document.getElementById("btn-enviar");
+  const spinner = document.getElementById("spinner");
+  const label = document.getElementById("btn-label");
+  btn.disabled = true;
+  spinner.classList.add("show");
+  label.textContent = "Enviando...";
+
+  const caso = {
+    folio:    document.getElementById("folio").value,
+    fecha:    document.getElementById("fecha").value,
+    iniciales: document.getElementById("iniciales").value.toUpperCase(),
+    medico_reporta: document.getElementById("medico").value,
+    edad:     parseInt(document.getElementById("edad").value),
+    sexo:     document.getElementById("sexo").value,
+    dias_evolucion: parseInt(document.getElementById("dias").value),
+    ...Object.fromEntries(ALL_SINT.map(s => [s.key, state[s.key]])),
+    expectoracion_color: document.getElementById("expectoracion_color").value,
+    temperatura: document.getElementById("temperatura").value,
+    fc:       document.getElementById("fc").value,
+    fr:       document.getElementById("fr").value,
+    sato2:    document.getElementById("sato2").value,
+    ...Object.fromEntries(ALL_SIGNOS.map(s => [s.key, state[s.key]])),
+    panel_pcr:            panelActual,
+    patogenos_detectados: getPatogenos(),
+    ct_values: document.getElementById("ct_values").value || null,
+    notas:    document.getElementById("notas").value || null,
+  };
+
+  // Enviar con no-cors (Apps Script requiere esto desde HTML externo)
+  fetch(SCRIPT_URL, {
+    method: "POST",
+    mode: "no-cors",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(caso)
+  })
+  .then(() => {
+    try { localStorage.removeItem(DRAFT_KEY); } catch(e) {}
+    showToast("✓ Caso enviado correctamente. ¡Gracias!", "ok");
+    btn.disabled = false;
+    spinner.classList.remove("show");
+    label.textContent = "✓ Enviar caso";
+    folioNum++;
+    setTimeout(() => resetForm(), 2000);
+  })
+  .catch(() => {
+    showToast("⚠ Error de conexión. Verifique su internet e intente de nuevo.", "err");
+    btn.disabled = false;
+    spinner.classList.remove("show");
+    label.textContent = "✓ Enviar caso";
+  });
+}
+
+function showToast(msg, tipo) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.className = `toast ${tipo}`;
+  window.scrollTo({top: 0, behavior: "smooth"});
+  setTimeout(() => { t.className = "toast"; }, 6000);
+}
+
+// ─── RESET ────────────────────────────────────────────────────────────────
+function resetForm() {
+  initFolio(folioNum);
+  ["edad","fc","fr","sato2","ct_values","notas","temperatura","dias","iniciales","medico","fecha"].forEach(id => {
+    document.getElementById(id).value = "";
+  });
+  document.getElementById("sexo").value = "";
+  document.getElementById("fecha").value = new Date().toISOString().split("T")[0];
+  document.getElementById("expectoracion_color").value = "N/A";
+
+  [...ALL_SINT,...ALL_SIGNOS].forEach(s => {
+    const escala = getEscala(s);
+    state[s.key] = escala[0];
+    const c = document.getElementById(`int_${s.key}`);
+    if (c) c.querySelectorAll("button").forEach((b,i) => b.classList.toggle("active", i===0));
+  });
+  document.querySelectorAll(".pcr-item input").forEach(i => {
+    i.checked = false;
+    i.closest(".pcr-item").classList.remove("checked");
+  });
+  document.querySelectorAll(".error").forEach(e => e.classList.remove("error"));
+  document.getElementById("pcr-error").classList.remove("show");
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────
+buildGroup("sint-sistemicos",     SINT_SISTEMICOS);
+buildGroup("sint-alta",           SINT_ALTA);
+buildGroup("sint-baja",           SINT_BAJA);
+buildGroup("sint-gi",             SINT_GI);
+buildGroup("signos-faringe",      SIGNOS_FARINGE);
+buildGroup("signos-auscultacion", SIGNOS_AUSCULTACION);
+buildGroup("signos-percusion",    SIGNOS_PERCUSION);
+buildPCR("pcr-virus",     VIRUS);
+buildPCR("pcr-bacterias", BACTERIAS);
+
+document.getElementById("fecha").value = new Date().toISOString().split("T")[0];
+initFolio(1);
+restoreDraft();
+</script>
+</body>
+</html>
