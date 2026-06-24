@@ -278,7 +278,7 @@
 </div>
 
 <script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxgztHVOeWAlqIeX-2KvU_iaJMUj54ntye4b0r6btqLHsakQfpwQJtUrwDtpoHu71Kg2Q/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxFm6YBmeawv_wQ5Uk5gkSWB8DnDjStc8sIFe85ECCepw43Q5eW7WUAYDI5dhvIkGJzAg/exec";
 const DRAFT_KEY  = "ira_pcr_draft";
 
 const SINT_SISTEMICOS = [
@@ -520,12 +520,11 @@ function enviar() {
     notas:    document.getElementById("notas").value || null,
   };
 
-  // Enviar con no-cors (Apps Script requiere esto desde HTML externo)
-  fetch(SCRIPT_URL, {
-    method: "POST",
-    mode: "no-cors",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(caso)
+  // Enviar via GET con datos en URL parameter (funciona desde GitHub Pages)
+  const dataStr = encodeURIComponent(JSON.stringify(caso));
+  fetch(SCRIPT_URL + "?data=" + dataStr, {
+    method: "GET",
+    mode: "no-cors"
   })
   .then(() => {
     try { localStorage.removeItem(DRAFT_KEY); } catch(e) {}
